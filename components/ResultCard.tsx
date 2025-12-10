@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GeneratedImage } from '../types';
 import ImageModal from './ImageModal';
 
@@ -9,16 +9,58 @@ interface ResultCardProps {
 
 const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleDownload = async (width: number, label: string) => {
     if (!image.url) return;
-    const link = document.createElement('a');
-    link.href = image.url;
-    link.download = `mockup-${image.id}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setShowDownloadMenu(false);
+
+    try {
+      const img = new Image();
+      img.src = image.url;
+      img.crossOrigin = "anonymous";
+      
+      await img.decode(); // Wait for image to load
+
+      const canvas = document.createElement('canvas');
+      const aspectRatio = img.height / img.width;
+      
+      // Set dimensions
+      canvas.width = width;
+      canvas.height = width * aspectRatio;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Draw and resize
+      // Use standard quality scaling
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Convert back to data URL and download
+      const resizedUrl = canvas.toDataURL('image/png', 1.0);
+      
+      const link = document.createElement('a');
+      link.href = resizedUrl;
+      link.download = `mockup-${image.id}-${label}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Erro ao processar download", error);
+      alert("Houve um erro ao preparar a imagem para download.");
+    }
   };
 
   const handleOpenNewTab = (e: React.MouseEvent) => {
@@ -27,11 +69,16 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
     window.open(image.url, '_blank');
   };
 
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDownloadMenu(!showDownloadMenu);
+  };
+
   return (
     <>
-      <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 flex flex-col h-full group hover:shadow-md transition-shadow">
+      <div className="bg-white rounded-xl overflow-visible shadow-sm border border-gray-200 flex flex-col h-full group hover:shadow-md transition-shadow relative">
         <div 
-          className="relative aspect-square bg-gray-100 w-full overflow-hidden cursor-pointer"
+          className="relative aspect-square bg-gray-100 w-full overflow-hidden cursor-pointer rounded-t-xl"
           onClick={() => image.url && setIsModalOpen(true)}
         >
           {image.loading ? (
@@ -67,18 +114,50 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
         </div>
 
         {/* Actions */}
-        <div className="p-3 flex gap-2 mt-auto bg-white border-t border-gray-100">
-          <button
-            onClick={handleDownload}
-            disabled={image.loading || !!image.error || !image.url}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Baixar imagem"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M12 9.75V3m0 0 4.5 4.5M12 3l-4.5 4.5" />
-            </svg>
-            <span className="hidden sm:inline">Baixar</span>
-          </button>
+        <div className="p-3 flex gap-2 mt-auto bg-white border-t border-gray-100 relative rounded-b-xl z-10">
+          <div className="relative flex-1" ref={menuRef}>
+            <button
+              onClick={toggleMenu}
+              disabled={image.loading || !!image.error || !image.url}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Baixar imagem"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M12 9.75V3m0 0 4.5 4.5M12 3l-4.5 4.5" />
+              </svg>
+              <span className="hidden sm:inline">Baixar</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`}>
+                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showDownloadMenu && (
+              <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200 z-50">
+                <div className="p-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100">
+                  Selecionar Qualidade
+                </div>
+                <button 
+                  onClick={() => handleDownload(1280, 'HD')}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center"
+                >
+                  HD <span className="text-xs text-gray-400">1280px</span>
+                </button>
+                <button 
+                  onClick={() => handleDownload(1920, 'FHD')}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center"
+                >
+                  Full HD <span className="text-xs text-gray-400">1920px</span>
+                </button>
+                <button 
+                  onClick={() => handleDownload(3840, '4K')}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center"
+                >
+                  4K <span className="text-xs text-brand-500 font-bold border border-brand-200 rounded px-1">PRO</span>
+                </button>
+              </div>
+            )}
+          </div>
           
           <button
             onClick={handleOpenNewTab}
