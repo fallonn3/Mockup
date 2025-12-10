@@ -12,15 +12,13 @@ export default function App() {
   const [category, setCategory] = useState<MockupCategory>(MockupCategory.STATIONERY);
   const [description, setDescription] = useState<string>('');
   
-  // State for the 4 result slots
   const [results, setResults] = useState<GeneratedImage[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if API key is effectively present (not empty string)
     if (!process.env.API_KEY) {
-      setConfigError("API Key não configurada. Adicione 'API_KEY' nas variáveis de ambiente do Netlify e faça um novo deploy.");
+      setConfigError("API Key não configurada. Verifique as configurações do Netlify.");
     }
   }, []);
 
@@ -40,10 +38,18 @@ export default function App() {
     }));
     setResults(newResults);
 
-    // Trigger generations in parallel but independently so one failure doesn't stop others
-    newResults.forEach((item, index) => {
-      generateSingle(index, item.id, sourceImage, category, description);
-    });
+    // SEQUENTIAL GENERATION
+    // Processing one by one avoids Rate Limits (429) on free tiers and improves reliability
+    for (let i = 0; i < INITIAL_RESULTS_COUNT; i++) {
+      // Check if the user hasn't reset/changed something mid-process
+      // We pass the current ID to ensure we update the correct slot
+      await generateSingle(i, newResults[i].id, sourceImage, category, description);
+      
+      // Small delay between requests to be gentle on the API
+      if (i < INITIAL_RESULTS_COUNT - 1) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
   }, [sourceImage, category, description]);
 
   const generateSingle = async (
@@ -58,6 +64,7 @@ export default function App() {
       
       setResults(prev => {
         const next = [...prev];
+        // Only update if the slot still exists and matches ID (user hasn't cleared)
         if (next[index] && next[index].id === id) {
            next[index] = { ...next[index], loading: false, url: generatedUrl, error: null };
         }
@@ -67,7 +74,6 @@ export default function App() {
       setResults(prev => {
         const next = [...prev];
         if (next[index] && next[index].id === id) {
-           // Display the specific error message if available
            const errorMessage = typeof err === 'string' ? err : (err.message || 'Falha na geração');
            next[index] = { ...next[index], loading: false, error: errorMessage };
         }
@@ -84,7 +90,7 @@ export default function App() {
       const newItem = { ...next[index], loading: true, error: null, url: null, id: `img-${Date.now()}-${index}` };
       next[index] = newItem;
       
-      // Trigger regeneration for this specific slot
+      // Trigger regeneration for this specific slot immediately
       generateSingle(index, newItem.id, sourceImage, category, description);
       
       return next;
@@ -113,13 +119,16 @@ export default function App() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
         {configError && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 animate-pulse">
              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
              </svg>
              <div>
-               <h3 className="font-bold text-red-800">Atenção Necessária</h3>
-               <p className="text-red-700 mt-1">{configError}</p>
+               <h3 className="font-bold text-red-800">Atenção: Chave de API Ausente</h3>
+               <p className="text-red-700 mt-1">
+                 O app não encontrou a chave <code>API_KEY</code>. Se você já configurou no Netlify, 
+                 tente fazer um novo deploy (Trigger Deploy) para garantir que o build pegou a variável.
+               </p>
              </div>
           </div>
         )}

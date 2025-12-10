@@ -1,14 +1,38 @@
 import { GoogleGenAI } from "@google/genai";
 import { MockupCategory } from "../types";
 
-// Validate API Key
+// Helper to resize image before sending to API to avoid payload limits
+const resizeImage = (base64Str: string, maxWidth = 1024): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.8)); // Convert to JPEG 80% quality for lighter payload
+    };
+    img.onerror = () => resolve(base64Str); // Fallback to original if fail
+  });
+};
+
 const apiKey = process.env.API_KEY;
-if (!apiKey) {
-  console.error("API_KEY is missing. Please check your environment configuration.");
-}
+
+// Debug log to help user verify configuration (visible in Browser Console)
+console.log("Gemini Service Init - API Key Status:", apiKey ? `Present (Length: ${apiKey.length})` : "Missing");
 
 // Initialize the client
-const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key-to-prevent-crash' });
+const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key' });
 
 const MOCKUP_PROMPTS: Record<MockupCategory, string> = {
   [MockupCategory.STATIONERY]: "branding stationery set on a desk, business cards, notebook, clean aesthetic, overhead view",
@@ -24,41 +48,39 @@ const MOCKUP_PROMPTS: Record<MockupCategory, string> = {
   [MockupCategory.TOTE_BAG]: "canvas tote bag hanging or being carried, realistic fabric folds, natural texture"
 };
 
-/**
- * Generates a single mockup image based on the provided source image and parameters.
- */
 export const generateMockupImage = async (
   base64Image: string,
   category: MockupCategory,
   userDescription: string
 ): Promise<string> => {
   if (!apiKey) {
-    throw new Error("Chave de API não configurada");
+    throw new Error("Chave de API não configurada (API_KEY missing)");
   }
 
   try {
-    const basePrompt = MOCKUP_PROMPTS[category];
-    const fullPrompt = `You are a professional product photographer and editor. 
-    Task: Create a high-quality, photorealistic product mockup.
-    
-    1. Base Scene: ${basePrompt}.
-    2. Input Image: The provided image is a logo or design pattern.
-    3. Action: Seamlessly apply this design onto the main object in the scene (e.g., the paper, the sign, the screen, the shirt fabric).
-    4. Style Details: ${userDescription || 'Professional, clean, realistic lighting and shadows'}.
-    
-    Ensure correct perspective, wrapping, and texture blending. The result must look like a real photo, not a digital overlay.`;
+    // 1. Optimization: Resize image to prevent timeouts/payload errors
+    const optimizedImage = await resizeImage(base64Image);
+    const cleanBase64 = optimizedImage.split(',')[1];
 
-    // Remove the prefix if present (e.g., "data:image/png;base64,")
-    const cleanBase64 = base64Image.split(',')[1] || base64Image;
+    const basePrompt = MOCKUP_PROMPTS[category];
+    const fullPrompt = `You are a professional product photographer. 
+    Task: Create a photorealistic product mockup.
+    
+    Context: ${basePrompt}.
+    Style: ${userDescription || 'Professional, clean, realistic lighting'}.
+    
+    Instruction: Apply the provided logo/design (Input Image) onto the product in the scene naturally. 
+    Ensure correct perspective, lighting, and texture blending.`;
+
+    console.log(`Generating mockup for ${category}...`);
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
-          // Sending image first often helps the model understand it's the context/subject
           {
             inlineData: {
-              mimeType: 'image/png',
+              mimeType: 'image/jpeg',
               data: cleanBase64
             }
           },
@@ -69,36 +91,31 @@ export const generateMockupImage = async (
       }
     });
 
-    // Extract image from response
     const parts = response.candidates?.[0]?.content?.parts;
     
-    if (!parts) {
-      throw new Error("O modelo não retornou conteúdo.");
-    }
+    if (!parts) throw new Error("Sem resposta do modelo");
 
-    // Search for inlineData (image)
     const imagePart = parts.find(p => p.inlineData);
 
-    if (imagePart && imagePart.inlineData && imagePart.inlineData.data) {
+    if (imagePart?.inlineData?.data) {
       return `data:${imagePart.inlineData.mimeType || 'image/png'};base64,${imagePart.inlineData.data}`;
     }
 
-    // If no image, check if there's text (error message from model)
     const textPart = parts.find(p => p.text);
-    if (textPart && textPart.text) {
-      console.warn("Model returned text instead of image:", textPart.text);
-      throw new Error("O modelo não pôde gerar a imagem (Safety/Context). Tente outra imagem.");
+    if (textPart?.text) {
+      console.warn("Model text response:", textPart.text);
+      throw new Error("O modelo não gerou imagem (Bloqueio de Segurança ou Contexto)");
     }
 
-    throw new Error("Nenhuma imagem encontrada na resposta.");
+    throw new Error("Formato de resposta inválido");
 
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    // Return clean error messages for the UI
-    if (error.message.includes("API_KEY")) return Promise.reject("Erro de Configuração (API Key)");
-    if (error.message.includes("fetch")) return Promise.reject("Erro de Conexão");
-    if (error.message.includes("403")) return Promise.reject("Acesso Negado (API Key inválida)");
-    if (error.message.includes("Safety")) return Promise.reject("Bloqueio de Segurança");
+    console.error("Gemini API Error Detail:", error);
+    
+    // User friendly error mapping
+    if (error.message.includes("429")) return Promise.reject("Muitas requisições. Aguarde um momento.");
+    if (error.message.includes("403")) return Promise.reject("Chave de API inválida.");
+    if (error.message.includes("Safety")) return Promise.reject("Conteúdo bloqueado por segurança.");
     
     throw error;
   }
