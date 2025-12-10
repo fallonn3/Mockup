@@ -1,21 +1,27 @@
 import { GoogleGenAI } from "@google/genai";
 import { MockupCategory } from "../types";
 
+// Validate API Key
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+  console.error("API_KEY is missing. Please check your environment configuration.");
+}
+
 // Initialize the client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key-to-prevent-crash' });
 
 const MOCKUP_PROMPTS: Record<MockupCategory, string> = {
-  [MockupCategory.STATIONERY]: "branding stationery set on a desk, business cards, notebook, clean aesthetic",
-  [MockupCategory.FACADE]: "modern shop facade sign, 3d logo signage, street view, photorealistic",
-  [MockupCategory.PACKAGING]: "modern product packaging box, cardboard texture, studio lighting",
-  [MockupCategory.TSHIRT]: "cotton t-shirt on a hanger or model, fabric texture, realistic apparel mockup",
-  [MockupCategory.HOODIE]: "hoodie sweatshirt, high quality fabric, studio mockup",
-  [MockupCategory.MUG]: "ceramic coffee mug on a wooden table, warm lighting, photorealistic",
-  [MockupCategory.MOBILE]: "smartphone screen mockup held in hand or on table, blurred background",
-  [MockupCategory.DESKTOP]: "modern desktop computer monitor on a sleek office desk, workspace context",
-  [MockupCategory.TABLET]: "tablet device on a coffee shop table, natural lighting",
-  [MockupCategory.POSTER]: "framed poster hanging on a modern interior wall, art gallery style",
-  [MockupCategory.TOTE_BAG]: "canvas tote bag hanging or being carried, realistic fabric folds"
+  [MockupCategory.STATIONERY]: "branding stationery set on a desk, business cards, notebook, clean aesthetic, overhead view",
+  [MockupCategory.FACADE]: "modern shop facade sign, 3d logo signage, street view, photorealistic, cinematic lighting",
+  [MockupCategory.PACKAGING]: "modern product packaging box, cardboard texture, studio lighting, depth of field",
+  [MockupCategory.TSHIRT]: "cotton t-shirt on a hanger or model, fabric texture, realistic apparel mockup, studio light",
+  [MockupCategory.HOODIE]: "hoodie sweatshirt, high quality fabric, studio mockup, soft lighting",
+  [MockupCategory.MUG]: "ceramic coffee mug on a wooden table, warm lighting, photorealistic, steam rising",
+  [MockupCategory.MOBILE]: "smartphone screen mockup held in hand or on table, blurred background, high tech vibe",
+  [MockupCategory.DESKTOP]: "modern desktop computer monitor on a sleek office desk, workspace context, professional setup",
+  [MockupCategory.TABLET]: "tablet device on a coffee shop table, natural lighting, sharp screen details",
+  [MockupCategory.POSTER]: "framed poster hanging on a modern interior wall, art gallery style, soft shadows",
+  [MockupCategory.TOTE_BAG]: "canvas tote bag hanging or being carried, realistic fabric folds, natural texture"
 };
 
 /**
@@ -26,12 +32,21 @@ export const generateMockupImage = async (
   category: MockupCategory,
   userDescription: string
 ): Promise<string> => {
+  if (!apiKey) {
+    throw new Error("Chave de API não configurada");
+  }
+
   try {
     const basePrompt = MOCKUP_PROMPTS[category];
-    const fullPrompt = `Create a high-quality, photorealistic product mockup. 
-    Context: ${basePrompt}. 
-    ${userDescription ? `Specific style details: ${userDescription}.` : ''}
-    Important: Seamlessly integrate the provided design/logo onto the object (e.g., screen, fabric, paper) with correct perspective, lighting, shadows, and texture wrapping. Make it look like a real professional product photo.`;
+    const fullPrompt = `You are a professional product photographer and editor. 
+    Task: Create a high-quality, photorealistic product mockup.
+    
+    1. Base Scene: ${basePrompt}.
+    2. Input Image: The provided image is a logo or design pattern.
+    3. Action: Seamlessly apply this design onto the main object in the scene (e.g., the paper, the sign, the screen, the shirt fabric).
+    4. Style Details: ${userDescription || 'Professional, clean, realistic lighting and shadows'}.
+    
+    Ensure correct perspective, wrapping, and texture blending. The result must look like a real photo, not a digital overlay.`;
 
     // Remove the prefix if present (e.g., "data:image/png;base64,")
     const cleanBase64 = base64Image.split(',')[1] || base64Image;
@@ -40,25 +55,25 @@ export const generateMockupImage = async (
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
-          {
-            text: fullPrompt
-          },
+          // Sending image first often helps the model understand it's the context/subject
           {
             inlineData: {
               mimeType: 'image/png',
               data: cleanBase64
             }
+          },
+          {
+            text: fullPrompt
           }
         ]
       }
     });
 
     // Extract image from response
-    // The model typically returns text + image parts. We need to find the image part.
     const parts = response.candidates?.[0]?.content?.parts;
     
     if (!parts) {
-      throw new Error("No content generated");
+      throw new Error("O modelo não retornou conteúdo.");
     }
 
     // Search for inlineData (image)
@@ -68,10 +83,23 @@ export const generateMockupImage = async (
       return `data:${imagePart.inlineData.mimeType || 'image/png'};base64,${imagePart.inlineData.data}`;
     }
 
-    throw new Error("No image data found in response");
+    // If no image, check if there's text (error message from model)
+    const textPart = parts.find(p => p.text);
+    if (textPart && textPart.text) {
+      console.warn("Model returned text instead of image:", textPart.text);
+      throw new Error("O modelo não pôde gerar a imagem (Safety/Context). Tente outra imagem.");
+    }
 
-  } catch (error) {
+    throw new Error("Nenhuma imagem encontrada na resposta.");
+
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+    // Return clean error messages for the UI
+    if (error.message.includes("API_KEY")) return Promise.reject("Erro de Configuração (API Key)");
+    if (error.message.includes("fetch")) return Promise.reject("Erro de Conexão");
+    if (error.message.includes("403")) return Promise.reject("Acesso Negado (API Key inválida)");
+    if (error.message.includes("Safety")) return Promise.reject("Bloqueio de Segurança");
+    
     throw error;
   }
 };

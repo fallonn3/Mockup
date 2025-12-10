@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { MockupCategory, GeneratedImage } from './types';
 import { generateMockupImage } from './services/geminiService';
 import UploadZone from './components/UploadZone';
@@ -15,6 +15,14 @@ export default function App() {
   // State for the 4 result slots
   const [results, setResults] = useState<GeneratedImage[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check if API key is effectively present (not empty string)
+    if (!process.env.API_KEY) {
+      setConfigError("API Key não configurada. Adicione 'API_KEY' nas variáveis de ambiente do Netlify e faça um novo deploy.");
+    }
+  }, []);
 
   const isGeneratingAny = results.some(r => r.loading);
 
@@ -55,11 +63,13 @@ export default function App() {
         }
         return next;
       });
-    } catch (err) {
+    } catch (err: any) {
       setResults(prev => {
         const next = [...prev];
         if (next[index] && next[index].id === id) {
-           next[index] = { ...next[index], loading: false, error: 'Falha na geração' };
+           // Display the specific error message if available
+           const errorMessage = typeof err === 'string' ? err : (err.message || 'Falha na geração');
+           next[index] = { ...next[index], loading: false, error: errorMessage };
         }
         return next;
       });
@@ -102,6 +112,18 @@ export default function App() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
+        {configError && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+             </svg>
+             <div>
+               <h3 className="font-bold text-red-800">Atenção Necessária</h3>
+               <p className="text-red-700 mt-1">{configError}</p>
+             </div>
+          </div>
+        )}
+
         <div className="max-w-3xl mx-auto text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
             Transforme seu design em <span className="text-brand-600">Realidade</span>
@@ -125,7 +147,7 @@ export default function App() {
             setDescription={setDescription}
             onGenerate={handleGenerateAll}
             isGenerating={isGeneratingAny}
-            canGenerate={!!sourceImage}
+            canGenerate={!!sourceImage && !configError}
           />
         </div>
 

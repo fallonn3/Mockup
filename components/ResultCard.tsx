@@ -87,12 +87,12 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
                <p className="text-gray-400 text-sm font-medium">Criando...</p>
             </div>
           ) : image.error ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center cursor-default">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center cursor-default bg-red-50/50">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-red-400 mb-2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
               </svg>
-              <p className="text-sm text-gray-500">Falha ao gerar</p>
-              <button onClick={(e) => { e.stopPropagation(); onRedo(); }} className="mt-2 text-sm text-brand-600 font-medium hover:underline">Tentar novamente</button>
+              <p className="text-sm font-medium text-gray-700">{image.error}</p>
+              <button onClick={(e) => { e.stopPropagation(); onRedo(); }} className="mt-3 text-xs text-brand-600 font-bold uppercase tracking-wider hover:underline">Tentar novamente</button>
             </div>
           ) : image.url ? (
             <>
