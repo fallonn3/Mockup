@@ -113,9 +113,6 @@ export default function App() {
           </div>
           <div className="flex items-center gap-4">
              <ThemeToggle />
-             <a href="https://ai.google.dev/" target="_blank" rel="noreferrer" className="text-xs text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400 transition-colors hidden sm:block">
-               Powered by Gemini
-             </a>
           </div>
         </div>
       </header>
