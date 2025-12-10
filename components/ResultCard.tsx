@@ -76,23 +76,23 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
 
   return (
     <>
-      <div className="bg-white rounded-xl overflow-visible shadow-sm border border-gray-200 flex flex-col h-full group hover:shadow-md transition-shadow relative">
+      <div className="bg-white rounded-xl overflow-visible shadow-sm border border-gray-200 flex flex-col h-full group hover:shadow-md transition-shadow relative dark:bg-gray-800 dark:border-gray-700">
         <div 
-          className="relative aspect-square bg-gray-100 w-full overflow-hidden cursor-pointer rounded-t-xl"
+          className="relative aspect-square bg-gray-100 w-full overflow-hidden cursor-pointer rounded-t-xl dark:bg-gray-700"
           onClick={() => image.url && setIsModalOpen(true)}
         >
           {image.loading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center animate-pulse cursor-default">
-               <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin mb-4"></div>
-               <p className="text-gray-400 text-sm font-medium">Criando...</p>
+               <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin mb-4 dark:border-brand-900 dark:border-t-brand-500"></div>
+               <p className="text-gray-400 text-sm font-medium dark:text-gray-500">Criando...</p>
             </div>
           ) : image.error ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center cursor-default bg-red-50/50">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center cursor-default bg-red-50/50 dark:bg-red-900/20">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-red-400 mb-2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
               </svg>
-              <p className="text-sm font-medium text-gray-700">{image.error}</p>
-              <button onClick={(e) => { e.stopPropagation(); onRedo(); }} className="mt-3 text-xs text-brand-600 font-bold uppercase tracking-wider hover:underline">Tentar novamente</button>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{image.error}</p>
+              <button onClick={(e) => { e.stopPropagation(); onRedo(); }} className="mt-3 text-xs text-brand-600 font-bold uppercase tracking-wider hover:underline dark:text-brand-400">Tentar novamente</button>
             </div>
           ) : image.url ? (
             <>
@@ -114,12 +114,12 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
         </div>
 
         {/* Actions */}
-        <div className="p-3 flex gap-2 mt-auto bg-white border-t border-gray-100 relative rounded-b-xl z-10">
+        <div className="p-3 flex gap-2 mt-auto bg-white border-t border-gray-100 relative rounded-b-xl z-10 dark:bg-gray-800 dark:border-gray-700">
           <div className="relative flex-1" ref={menuRef}>
             <button
               onClick={toggleMenu}
               disabled={image.loading || !!image.error || !image.url}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-gray-700 dark:hover:bg-gray-600"
               title="Baixar imagem"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
@@ -133,27 +133,27 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
 
             {/* Dropdown Menu */}
             {showDownloadMenu && (
-              <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200 z-50">
-                <div className="p-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100">
+              <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200 z-50 dark:bg-gray-800 dark:border-gray-700">
+                <div className="p-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700">
                   Selecionar Qualidade
                 </div>
                 <button 
                   onClick={() => handleDownload(1280, 'HD')}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-brand-400"
                 >
-                  HD <span className="text-xs text-gray-400">1280px</span>
+                  HD <span className="text-xs text-gray-400 dark:text-gray-500">1280px</span>
                 </button>
                 <button 
                   onClick={() => handleDownload(1920, 'FHD')}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-brand-400"
                 >
-                  Full HD <span className="text-xs text-gray-400">1920px</span>
+                  Full HD <span className="text-xs text-gray-400 dark:text-gray-500">1920px</span>
                 </button>
                 <button 
                   onClick={() => handleDownload(3840, '4K')}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 flex justify-between items-center dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-brand-400"
                 >
-                  4K <span className="text-xs text-brand-500 font-bold border border-brand-200 rounded px-1">PRO</span>
+                  4K <span className="text-xs text-brand-500 font-bold border border-brand-200 rounded px-1 dark:border-brand-500/50">PRO</span>
                 </button>
               </div>
             )}
@@ -162,7 +162,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
           <button
             onClick={handleOpenNewTab}
             disabled={image.loading || !!image.error || !image.url}
-            className="flex items-center justify-center p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 disabled:opacity-50 transition-colors"
+            className="flex items-center justify-center p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 disabled:opacity-50 transition-colors dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-brand-400 dark:hover:border-brand-400"
             title="Abrir em nova guia"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -173,7 +173,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ image, onRedo }) => {
           <button
             onClick={onRedo}
             disabled={image.loading}
-            className="flex items-center justify-center p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-brand-600 disabled:opacity-50 transition-colors"
+            className="flex items-center justify-center p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-brand-600 disabled:opacity-50 transition-colors dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-brand-400"
             title="Refazer este mockup"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">

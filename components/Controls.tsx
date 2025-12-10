@@ -21,17 +21,17 @@ const Controls: React.FC<ControlsProps> = ({
   canGenerate
 }) => {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 dark:bg-gray-800 dark:border-gray-700 transition-colors">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Category Selector */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-gray-700">Categoria do Mockup</label>
+          <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Categoria do Mockup</label>
           <div className="relative">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as MockupCategory)}
-              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               {Object.values(MockupCategory).map((cat) => (
                 <option key={cat} value={cat}>
@@ -39,7 +39,7 @@ const Controls: React.FC<ControlsProps> = ({
                 </option>
               ))}
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
               </svg>
@@ -49,15 +49,15 @@ const Controls: React.FC<ControlsProps> = ({
 
         {/* Optional Description */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-gray-700">
-            Estilo / Detalhes <span className="text-gray-400 font-normal">(Opcional)</span>
+          <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Estilo / Detalhes <span className="text-gray-400 font-normal dark:text-gray-500">(Opcional)</span>
           </label>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Ex: fundo escuro, minimalista, luz natural..."
-            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-500"
           />
         </div>
       </div>
@@ -66,9 +66,9 @@ const Controls: React.FC<ControlsProps> = ({
         <button
           onClick={onGenerate}
           disabled={!canGenerate || isGenerating}
-          className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg shadow-brand-500/30 flex items-center gap-2 transition-all transform active:scale-95 ${
+          className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg shadow-brand-500/30 flex items-center gap-2 transition-all transform active:scale-95 dark:shadow-none ${
             !canGenerate || isGenerating
-              ? 'bg-gray-400 cursor-not-allowed shadow-none'
+              ? 'bg-gray-400 cursor-not-allowed shadow-none dark:bg-gray-600'
               : 'bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400'
           }`}
         >

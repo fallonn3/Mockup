@@ -48,10 +48,10 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onImageSelected, selectedImage 
   return (
     <div className="w-full mb-8">
       <div
-        className={`relative border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer bg-white ${
+        className={`relative border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
           isDragging
-            ? 'border-brand-500 bg-brand-50'
-            : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50'
+            ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-400'
+            : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50 bg-white dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-750 dark:hover:border-brand-500'
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -67,7 +67,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onImageSelected, selectedImage 
         />
 
         {selectedImage ? (
-          <div className="relative group w-full max-w-xs aspect-square flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+          <div className="relative group w-full max-w-xs aspect-square flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
             <img
               src={selectedImage}
               alt="Preview"
@@ -79,13 +79,13 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onImageSelected, selectedImage 
           </div>
         ) : (
           <div className="text-center">
-            <div className="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-brand-900 dark:text-brand-300">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-800">Clique ou arraste sua imagem</h3>
-            <p className="text-sm text-gray-500 mt-2">Suporta apenas arquivos PNG</p>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Clique ou arraste sua imagem</h3>
+            <p className="text-sm text-gray-500 mt-2 dark:text-gray-400">Suporta apenas arquivos PNG</p>
           </div>
         )}
       </div>
